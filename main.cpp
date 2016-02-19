@@ -128,6 +128,173 @@ void printAlbumList()
     for(int i = 0; i < int(albums.size()); i++) std::cout << i+1 << ". " << albums[i].albumName << std::endl;
 }
 
+Album *selectAlbum()
+{
+    Album *talbum = NULL;
+
+    if(albums.empty())
+    {
+        hitReturn("Album list is empty!");
+        return talbum;
+    }
+
+    std::string abuf;
+    int abufnum = 0;
+    printAlbumList();
+    std::cout << "Show details for which album? [1-" << albums.size() << "] : ";
+    std::getline(std::cin, abuf);
+    abufnum = atoi(abuf.c_str())-1;
+
+    if(abufnum < 0 || abufnum >= int(albums.size()) )
+    {
+        hitReturn("Not a valid album #!");
+        return talbum;
+    }
+
+    return &albums[abufnum];
+}
+
+void editTracks(Album *talbum)
+{
+    bool quit = false;
+
+    if(talbum == NULL) return;
+
+    std::vector<Track> *tracks = &talbum->tracks;
+
+    while(!quit)
+    {
+        std::cout << "Total tracks : " << tracks->size() << std::endl;
+        for(int i = 0; i < int(tracks->size()); i++)
+        {
+            std::cout << i+1 << ". " << (*tracks)[i].trackName << std::endl;
+        }
+
+        std::cout << "\n\n[n]ew track\n";
+        std::cout << "[e]dit track\n";
+        std::cout << "[d]elete track\n";
+        std::cout << "e[x]it\n\n";
+
+        std::string buf;
+        std::cout << "\nEnter selection : ";
+        std::getline(std::cin, buf);
+
+        if(buf == "n") addNewTrack(talbum);
+        else if(buf == "e")
+        {
+            std::string tbuf;
+            int tnum = 0;
+            std::cout << "Edit which track #? : ";
+            std::getline(std::cin, tbuf);
+            tnum = atoi(tbuf.c_str()) - 1;
+
+            if(tnum < 0 || tnum >= int(tracks->size()) )
+            {
+                hitReturn("Not a valid track #!");
+                continue;
+            }
+
+            std::cout << "Enter new track name :";
+            std::getline(std::cin, tbuf);
+            (*tracks)[tnum].trackName = tbuf;
+
+            std::cout << "Enter new track time in seconds :";
+            std::getline(std::cin, tbuf);
+            (*tracks)[tnum].lengthInSec = atoi(tbuf.c_str());
+
+        }
+        else if(buf == "d")
+        {
+            std::string tbuf;
+            int tnum = 0;
+            std::cout << "Delete which track #? : ";
+            std::getline(std::cin, tbuf);
+            tnum = atoi(tbuf.c_str()) - 1;
+
+            if(tnum < 0 || tnum >= int(tracks->size()) )
+            {
+                hitReturn("Not a valid track #!");
+                continue;
+            }
+        }
+    }
+}
+
+void editAlbum(Album *talbum)
+{
+    bool quit = false;
+
+    if(talbum == NULL) return;
+
+    Album originalalbum = *talbum;
+
+    while(!quit)
+    {
+        std::string buf;
+
+        std::cout << "\n\n";
+        std::cout << "Album [t]itle : " << talbum->albumName << std::endl;
+        std::cout << "[a]rtist      : " << talbum->bandName << std::endl;
+        std::cout << "Release [y]ear: " << talbum->year << std::endl;
+        std::cout << "Edit Trac[k]s...\n";
+        std::cout << "\n[s]ave changes\n";
+        std::cout << "[d]iscard changes\n";
+        std::cout << "[r]emove album\n\n";
+
+        std::cout << "Enter selection : ";
+        std::getline(std::cin, buf);
+
+        if(buf == "d")
+        {
+            *talbum = originalalbum;
+            quit = true;
+        }
+        else if(buf == "s") quit = true;
+        else if(buf == "t")
+        {
+            std::string ntitle;
+            std::cout << "New album title :";
+            std::getline(std::cin, ntitle);
+            talbum->albumName = ntitle;
+        }
+        else if(buf == "a")
+        {
+            std::string nartist;
+            std::cout << "New artist name :";
+            std::getline(std::cin, nartist);
+            talbum->bandName = nartist;
+        }
+        else if(buf == "y")
+        {
+            std::string nyear;
+            std::cout << "New release year :";
+            std::getline(std::cin, nyear);
+            talbum->year = atoi(nyear.c_str());
+        }
+        else if(buf == "k")
+        {
+            editTracks(talbum);
+        }
+        else if(buf == "r")
+        {
+            if(promptyorn("Really delete this album? (y/n)"))
+            {
+                for(int i = 0; i < int(albums.size()); i++)
+                {
+                    if( &albums[i] == talbum)
+                    {
+                        albums.erase(albums.begin() + i);
+                        talbum = NULL;
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+
+}
+
 void mainMenu()
 {
     bool quit = false;
@@ -141,6 +308,7 @@ void mainMenu()
 
         std::vector<std::string> menuitems;
         menuitems.push_back("New Album");
+        menuitems.push_back("Edit Album");
         menuitems.push_back("List Albums");
         menuitems.push_back("Show Album Details");
         menuitems.push_back("Quit");
@@ -169,27 +337,17 @@ void mainMenu()
         }
         else if(menuitems[selection] == "Show Album Details")
         {
-            if(albums.empty())
+            Album *talbum = selectAlbum();
+
+            if(talbum != NULL)
             {
-                hitReturn("Album list is empty!");
-                continue;
-            }
-
-                std::string abuf;
-                int abufnum = 0;
-                printAlbumList();
-                std::cout << "Show details for which album? [1-" << albums.size() << "] : ";
-                std::getline(std::cin, abuf);
-                abufnum = atoi(abuf.c_str())-1;
-
-                if(abufnum < 0 || abufnum >= int(albums.size()) )
-                {
-                    hitReturn("Not a valid album #!");
-                    continue;
-                }
-
-                printAlbum(&albums[abufnum]);
+                printAlbum(talbum);
                 hitReturn();
+            }
+        }
+        else if(menuitems[selection] == "Edit Album")
+        {
+            editAlbum(selectAlbum());
         }
     }
 
