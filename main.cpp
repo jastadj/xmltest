@@ -23,6 +23,16 @@ struct Album
 
 std::vector<Album> albums;
 
+void addDebugAlbum()
+{
+    Album newalbum;
+    newalbum.albumName = "album name";
+    newalbum.bandName = "some band";
+    newalbum.year = 200;
+
+    albums.push_back(newalbum);
+}
+
 bool promptyorn(std::string pstring)
 {
     while(1)
@@ -295,8 +305,78 @@ void editAlbum(Album *talbum)
 
 }
 
+void saveAlbumAtNode(XMLDocument *xmldoc, XMLNode *bnode, Album *talbum)
+{
+
+    XMLNode *myalbum = xmldoc->NewElement("Album");
+    bnode->InsertEndChild(myalbum);
+
+    XMLElement *element = xmldoc->NewElement("Title");
+    element->SetText(talbum->albumName.c_str());
+    myalbum->InsertEndChild(element);
+
+    element = xmldoc->NewElement("Year");
+    element->SetText(talbum->year);
+    myalbum->InsertEndChild(element);
+
+    element = xmldoc->NewElement("Artist");
+    element->SetText(talbum->bandName.c_str());
+    myalbum->InsertEndChild(element);
+}
+
+Album *loadAlbumAtNode(XMLDocument *xmldoc, XMLNode *anode)
+{
+    Album *newalbum = new Album;
+
+    XMLElement *element = anode->FirstChildElement("Title");
+    newalbum->albumName = element->GetText();
+
+    element = anode->FirstChildElement("Year");
+    element->QueryIntText(&newalbum->year);
+
+    element = anode->FirstChildElement("Artist");
+    newalbum->bandName = element->GetText();
+
+    return newalbum;
+}
+
+void doSave()
+{
+    XMLDocument mydoc;
+
+    XMLNode *root = mydoc.NewElement("Collection");
+
+    mydoc.InsertFirstChild(root);
+
+    for(int i = 0; i < int(albums.size()); i++)
+    {
+        saveAlbumAtNode(&mydoc, root, &albums[i]);
+    }
+
+
+    mydoc.SaveFile("save.xml");
+}
+
+void doLoad()
+{
+    XMLDocument mydoc;
+    mydoc.LoadFile("save.xml");
+
+    XMLNode *root = mydoc.FirstChildElement("Collection");
+    XMLNode *anode = root->FirstChildElement("Album");
+
+
+    Album *talbum = loadAlbumAtNode(&mydoc, anode);
+
+    albums.push_back(*talbum);
+    delete talbum;
+}
+
 void mainMenu()
 {
+    //test
+    //addDebugAlbum();
+
     bool quit = false;
 
     while(!quit)
@@ -311,6 +391,8 @@ void mainMenu()
         menuitems.push_back("Edit Album");
         menuitems.push_back("List Albums");
         menuitems.push_back("Show Album Details");
+        menuitems.push_back("Save");
+        menuitems.push_back("Load");
         menuitems.push_back("Quit");
 
         std::cout << "Total Albums In Database : " << albums.size() << "\n\n";
@@ -348,6 +430,14 @@ void mainMenu()
         else if(menuitems[selection] == "Edit Album")
         {
             editAlbum(selectAlbum());
+        }
+        else if(menuitems[selection] == "Save")
+        {
+            doSave();
+        }
+        else if(menuitems[selection] == "Load")
+        {
+            doLoad();
         }
     }
 
